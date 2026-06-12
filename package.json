@@ -1,6 +1,6 @@
 {
   "name": "bc-gaming-bot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "BC | BORDO CAMPO Discord bot",
   "main": "index.js",
   "scripts": {
