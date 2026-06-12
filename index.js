@@ -18,6 +18,7 @@ const { startF1Draw, handleF1DrawButton, handleF1DrawModal } = require('./module
 const { handleResetF1 } = require('./modules/f1/reset');
 const { handleRealizzaCalendarioF1, handleCalendarComponent, handleCalendarModal } = require('./modules/f1/calendar');
 const { handleRisultatiF1, handleResultsComponent } = require('./modules/f1/results');
+
 const { startNewsScheduler, checkNewsOnce } = require('./modules/news/newsService');
 const {
   publishLookingForPlayersPanel,
@@ -31,7 +32,8 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
   ]
 });
 
@@ -87,18 +89,13 @@ const slashCommands = [
 
   new SlashCommandBuilder()
     .setName('pubblica_ticket')
-    .setDescription('Staff: pubblica il pannello ticket con menu a tendina')
+    .setDescription('Staff: pubblica il pannello di apertura ticket')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .toJSON()
 ];
 
 async function registerSlashCommands() {
   try {
-    if (!config.token || !config.clientId || !config.guildId) {
-      console.error('❌ Mancano DISCORD_TOKEN, CLIENT_ID o GUILD_ID. Controlla le variabili Railway/.env.');
-      return;
-    }
-
     const rest = new REST({ version: '10' }).setToken(config.token);
 
     await rest.put(
@@ -106,7 +103,7 @@ async function registerSlashCommands() {
       { body: slashCommands }
     );
 
-    console.log('✅ Slash commands registrati: /pubblica_f1, /f1_sorteggio, /resetta_f1, /realizza_calendario_f1, /risultati_f1, /pubblica_cerco_compagni, /pubblica_clip_screen, /news_check, /pubblica_ticket');
+    console.log('✅ Slash commands registrati:', slashCommands.map(c => `/${c.name}`).join(', '));
   } catch (error) {
     console.error('❌ Errore registrazione slash commands:', error);
   }
@@ -117,6 +114,7 @@ client.once('clientReady', async () => {
 
   await testConnection();
   await registerSlashCommands();
+
   startNewsScheduler(client);
 
   console.log('✅ Sistema F1 pronto');
@@ -221,7 +219,7 @@ client.on('interactionCreate', async (interaction) => {
     if (interaction.commandName === 'pubblica_ticket') {
       await interaction.deferReply({ ephemeral: true });
       await publishTicketPanel(client);
-      await interaction.editReply('✅ Pannello ticket pubblicato nel canale assistenza.');
+      await interaction.editReply('✅ Pannello ticket pubblicato.');
       return;
     }
   } catch (error) {
