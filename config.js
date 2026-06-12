@@ -42,6 +42,10 @@ module.exports = {
 
   roles: {
     f1Driver: process.env.ROLE_F1_DRIVER_ID,
-    ticketStaff: process.env.TICKET_STAFF_ROLE_ID || process.env.STAFF_ROLE_ID || '1514358410441654474'
+    ticketStaff: process.env.TICKET_STAFF_ROLE_ID || process.env.STAFF_ROLE_ID || '1514358410441654474',
+    ticketStaffExtra: (process.env.TICKET_STAFF_EXTRA_ROLE_IDS || '1498341567105339492')
+      .split(',')
+      .map(x => x.trim())
+      .filter(Boolean)
   }
 };
