@@ -1,10 +1,9 @@
 {
   "name": "bc-gaming-bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "BC Bordo Campo Discord bot - F1, News, Tickets, Cerco Compagni",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
   "keywords": [],
@@ -12,7 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
-    "canvas": "^3.2.3",
     "discord.js": "^14.26.4",
     "dotenv": "^17.4.2",
     "rss-parser": "^3.13.0"

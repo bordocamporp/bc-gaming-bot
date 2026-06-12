@@ -18,7 +18,6 @@ const { startF1Draw, handleF1DrawButton, handleF1DrawModal } = require('./module
 const { handleResetF1 } = require('./modules/f1/reset');
 const { handleRealizzaCalendarioF1, handleCalendarComponent, handleCalendarModal } = require('./modules/f1/calendar');
 const { handleRisultatiF1, handleResultsComponent } = require('./modules/f1/results');
-
 const { startNewsScheduler, checkNewsOnce } = require('./modules/news/newsService');
 const {
   publishLookingForPlayersPanel,
@@ -26,6 +25,7 @@ const {
   handleLookingForPlayersModal
 } = require('./modules/community/lookingForPlayers');
 const { publishClipsScreensPanel } = require('./modules/community/clipsScreensPanel');
+const { publishTicketPanel, handleTicketSelect, handleTicketButton } = require('./modules/tickets');
 
 const client = new Client({
   intents: [
@@ -83,11 +83,22 @@ const slashCommands = [
     .setName('news_check')
     .setDescription('Staff: controlla subito i feed news e pubblica le ultime notizie')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .toJSON(),
+
+  new SlashCommandBuilder()
+    .setName('pubblica_ticket')
+    .setDescription('Staff: pubblica il pannello ticket con menu a tendina')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .toJSON()
 ];
 
 async function registerSlashCommands() {
   try {
+    if (!config.token || !config.clientId || !config.guildId) {
+      console.error('❌ Mancano DISCORD_TOKEN, CLIENT_ID o GUILD_ID. Controlla le variabili Railway/.env.');
+      return;
+    }
+
     const rest = new REST({ version: '10' }).setToken(config.token);
 
     await rest.put(
@@ -95,7 +106,7 @@ async function registerSlashCommands() {
       { body: slashCommands }
     );
 
-    console.log('✅ Slash commands registrati: /pubblica_f1, /f1_sorteggio, /resetta_f1, /realizza_calendario_f1, /risultati_f1, /pubblica_cerco_compagni, /pubblica_clip_screen, /news_check');
+    console.log('✅ Slash commands registrati: /pubblica_f1, /f1_sorteggio, /resetta_f1, /realizza_calendario_f1, /risultati_f1, /pubblica_cerco_compagni, /pubblica_clip_screen, /news_check, /pubblica_ticket');
   } catch (error) {
     console.error('❌ Errore registrazione slash commands:', error);
   }
@@ -106,18 +117,16 @@ client.once('clientReady', async () => {
 
   await testConnection();
   await registerSlashCommands();
-
   startNewsScheduler(client);
 
   console.log('✅ Sistema F1 pronto');
   console.log('✅ Sistema news pronto');
   console.log('✅ Sistema CERCO COMPAGNI pronto');
+  console.log('✅ Sistema TICKET pronto');
 });
 
 client.on('guildMemberAdd', async (member) => {
   try {
-    // Messaggio di benvenuto rimosso come richiesto.
-    // Manteniamo solo il salvataggio utente nel database, se configurato.
     console.log(`👤 Nuovo membro: ${member.user.tag}`);
     await saveUser(member);
   } catch (err) {
@@ -128,12 +137,14 @@ client.on('guildMemberAdd', async (member) => {
 client.on('interactionCreate', async (interaction) => {
   try {
     if (interaction.isStringSelectMenu()) {
+      if (await handleTicketSelect(interaction)) return;
       if (await handleResultsComponent(interaction)) return;
       if (await handleCalendarComponent(interaction)) return;
       return;
     }
 
     if (interaction.isButton()) {
+      if (await handleTicketButton(interaction)) return;
       if (await handleResultsComponent(interaction)) return;
       if (await handleCalendarComponent(interaction)) return;
       if (await handleLookingForPlayersButton(interaction)) return;
@@ -204,6 +215,13 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.deferReply({ ephemeral: true });
       const report = await checkNewsOnce(client, { manual: true });
       await interaction.editReply(`📰 **Controllo news completato**\n\n${report.map(x => `• ${x}`).join('\n')}`);
+      return;
+    }
+
+    if (interaction.commandName === 'pubblica_ticket') {
+      await interaction.deferReply({ ephemeral: true });
+      await publishTicketPanel(client);
+      await interaction.editReply('✅ Pannello ticket pubblicato nel canale assistenza.');
       return;
     }
   } catch (error) {
